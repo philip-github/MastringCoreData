@@ -13,9 +13,9 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-//        addTodoTaskObjectOrientedWay()
-//        deleteTaskFromCoreDataObjectOrientedWay()
-//        fetchTaskFromCoreDataObejctOrientedWay()
+        addTodoTaskObjectOrientedWay()
+        deleteTaskFromCoreDataObjectOrientedWay()
+        fetchTaskFromCoreDataObejctOrientedWay()
     }
     
     func deleteTaskFromCoreDataObjectOrientedWay(){
@@ -24,7 +24,7 @@ class ViewController: UIViewController {
         
         guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
         
-        let fetchRequest = NSFetchRequest<Task>.init(entityName: "Task")
+        let fetchRequest = NSFetchRequest<User>.init(entityName: "User")
         
         do{
             let data = try managedContext.fetch(fetchRequest) as [NSManagedObject]
@@ -36,6 +36,7 @@ class ViewController: UIViewController {
             
             do{
                 try managedContext.save()
+                print("Deleted")
             }catch{
                 print(error.localizedDescription)
             }
@@ -52,13 +53,22 @@ class ViewController: UIViewController {
         
         guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
         
-        let fetchRequest = NSFetchRequest<Task>.init(entityName: "Task")
-        
+        let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        let passportFetchRequest = NSFetchRequest<Passport>.init(entityName: "Passport")
+        let taskFetchRequest = NSFetchRequest<Task>.init(entityName: "Task")
         do{
-            let data = try managedContext.fetch(fetchRequest) as [NSManagedObject]
+            let users = try managedContext.fetch(userFetchRequest) as [NSManagedObject]
+            let passports = try managedContext.fetch(passportFetchRequest) as [NSManagedObject]
+            let tasks = try managedContext.fetch(taskFetchRequest) as [NSManagedObject]
             
-            for item in data{
-                print(item.value(forKey: "details") as! String)
+            for user in users{
+                print(user.value(forKey: "firstName") as! String)
+            }
+            for pass in passports{
+                print(pass.value(forKey: "number") as! String)
+            }
+            for task in tasks{
+                print(task.value(forKey: "details") as! String)
             }
         }catch{
             print(error.localizedDescription)
@@ -88,22 +98,23 @@ class ViewController: UIViewController {
         
         let userPassport = Passport(context: managedContext)
         userPassport.expiryDate = NSDate() as Date
-        userPassport.number = "User Passport Number"
+        userPassport.number = "User Passport Number two"
         
         let user = User(context: managedContext)
-        user.firstName = "Philip"
+        user.firstName = "Fadi"
         user.secondName = "Al-Twal"
         user.userId = 123
         user.tasks = NSSet.init(array: [taskOne,taskSecond])
         user.passport = userPassport
         
         
-        do{
-            try managedContext.save()
-        }catch{
-            print(error.localizedDescription)
+        if managedContext.hasChanges{
+            do{
+                try managedContext.save()
+            }catch{
+                print(error.localizedDescription)
+            }
         }
-        
     }
 
 }
