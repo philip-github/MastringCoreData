@@ -14,7 +14,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         addTodoTaskObjectOrientedWay()
-        deleteTaskFromCoreDataObjectOrientedWay()
+//        deleteTaskFromCoreDataObjectOrientedWay()
         fetchTaskFromCoreDataObejctOrientedWay()
     }
     
@@ -54,22 +54,18 @@ class ViewController: UIViewController {
         guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
         
         let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
-        let passportFetchRequest = NSFetchRequest<Passport>.init(entityName: "Passport")
-        let taskFetchRequest = NSFetchRequest<Task>.init(entityName: "Task")
+        
         do{
-            let users = try managedContext.fetch(userFetchRequest) as [NSManagedObject]
-            let passports = try managedContext.fetch(passportFetchRequest) as [NSManagedObject]
-            let tasks = try managedContext.fetch(taskFetchRequest) as [NSManagedObject]
+            let users = try managedContext.fetch(userFetchRequest)
+            
             
             for user in users{
                 print(user.value(forKey: "firstName") as! String)
+                print(user.passport?.number ?? "NO Passport number")
+                print(user.tasks?.value(forKey: "details") ?? "NO TASKS WAS MADE")
+               
             }
-            for pass in passports{
-                print(pass.value(forKey: "number") as! String)
-            }
-            for task in tasks{
-                print(task.value(forKey: "details") as! String)
-            }
+            
         }catch{
             print(error.localizedDescription)
         }
@@ -101,7 +97,7 @@ class ViewController: UIViewController {
         userPassport.number = "User Passport Number two"
         
         let user = User(context: managedContext)
-        user.firstName = "Fadi"
+        user.firstName = "Philip"
         user.secondName = "Al-Twal"
         user.userId = 123
         user.tasks = NSSet.init(array: [taskOne,taskSecond])
