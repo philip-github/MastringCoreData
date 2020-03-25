@@ -13,7 +13,8 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        addTodoTaskObjectOrientedWay()
+//        addTodoTaskObjectOrientedWay()
+        addOneTodoTask()
 //        deleteTaskFromCoreDataObjectOrientedWay()
         fetchTaskFromCoreDataObejctOrientedWay()
     }
@@ -26,6 +27,7 @@ class ViewController: UIViewController {
         
         let fetchRequest = NSFetchRequest<User>.init(entityName: "User")
         
+        
         do{
             let data = try managedContext.fetch(fetchRequest) as [NSManagedObject]
             
@@ -33,7 +35,7 @@ class ViewController: UIViewController {
                 
                 managedContext.delete(item)
             }
-            
+          
             do{
                 try managedContext.save()
                 print("Deleted")
@@ -72,6 +74,37 @@ class ViewController: UIViewController {
     }
     
     
+    func addOneTodoTask(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let task = Task(context: managedContext)
+        
+        task.name = "Deny Task"
+        task.details = "Deny Description"
+        task.id = 99
+        
+        
+        let user = User(context: managedContext)
+        user.firstName = "Omar from Jordan"
+        user.secondName = "Jaradat"
+        user.userId = 000
+        
+        user.tasks = NSSet.init(array: [task])
+        
+        
+        if managedContext.hasChanges{
+            do{
+                try managedContext.save()
+                print("Saved")
+            }catch{
+                print(error)
+            }
+        }
+    }
+    
     
     
     func addTodoTaskObjectOrientedWay(){
@@ -91,16 +124,20 @@ class ViewController: UIViewController {
         taskSecond.details = "Second Item Description"
         taskSecond.id = 2
         
+        let taskThird = Task(context: managedContext)
+        taskThird.name = "Third Item"
+        taskThird.details = "Third Item Description"
+        taskThird.id = 3
         
         let userPassport = Passport(context: managedContext)
         userPassport.expiryDate = NSDate() as Date
-        userPassport.number = "User Passport Number two"
+        userPassport.number = "User Passport Number"
         
         let user = User(context: managedContext)
-        user.firstName = "Philip"
+        user.firstName = "Fadi"
         user.secondName = "Al-Twal"
         user.userId = 123
-        user.tasks = NSSet.init(array: [taskOne,taskSecond])
+        user.tasks = NSSet.init(array: [taskOne,taskSecond,taskThird])
         user.passport = userPassport
         
         
@@ -112,5 +149,5 @@ class ViewController: UIViewController {
             }
         }
     }
-
+    
 }

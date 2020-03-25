@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C150AFFE242AB05E006CCD6E /* User+CoreDataValidations.swift in Sources */ = {isa = PBXBuildFile; fileRef = C150AFFD242AB05E006CCD6E /* User+CoreDataValidations.swift */; };
 		C152ECA624268A6400178480 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C152ECA524268A6400178480 /* AppDelegate.swift */; };
 		C152ECA824268A6400178480 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C152ECA724268A6400178480 /* SceneDelegate.swift */; };
 		C152ECAA24268A6400178480 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C152ECA924268A6400178480 /* ViewController.swift */; };
@@ -23,6 +24,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		C150AFFD242AB05E006CCD6E /* User+CoreDataValidations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "User+CoreDataValidations.swift"; sourceTree = "<group>"; };
 		C152ECA224268A6400178480 /* MasterCoreData.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MasterCoreData.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C152ECA524268A6400178480 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C152ECA724268A6400178480 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -58,6 +60,7 @@
 				C152ED082426C37800178480 /* Task+CoreDataProperties.swift */,
 				C152ED092426C37800178480 /* User+CoreDataClass.swift */,
 				C152ED0A2426C37800178480 /* User+CoreDataProperties.swift */,
+				C150AFFD242AB05E006CCD6E /* User+CoreDataValidations.swift */,
 				C152ED0B2426C37800178480 /* Passport+CoreDataClass.swift */,
 				C152ED0C2426C37800178480 /* Passport+CoreDataProperties.swift */,
 				C152ECA424268A6400178480 /* MasterCoreData */,
@@ -160,6 +163,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C152ECAA24268A6400178480 /* ViewController.swift in Sources */,
+				C150AFFE242AB05E006CCD6E /* User+CoreDataValidations.swift in Sources */,
 				C152ED0D2426C37800178480 /* Task+CoreDataClass.swift in Sources */,
 				C152ED102426C37800178480 /* User+CoreDataProperties.swift in Sources */,
 				C152ED122426C37800178480 /* Passport+CoreDataProperties.swift in Sources */,
