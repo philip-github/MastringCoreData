@@ -13,10 +13,18 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        
 //        addTodoTaskObjectOrientedWay()
-        addOneTodoTask()
+//        addOneTodoTask()
 //        deleteTaskFromCoreDataObjectOrientedWay()
-        fetchTaskFromCoreDataObejctOrientedWay()
+//        fetchTaskFromCoreDataObejctOrientedWay()
+//        fetchUserByNameUsingNSPredicte()
+//        fetchUserByNameUsingSortDiscriptor()
+//        fetchRequestWithDefaultType()
+//        fetchRequestWithDictionaryType()
+//        fetchRequestWithCountType()
+        fetchRequestWithIDType()
     }
     
     func deleteTaskFromCoreDataObjectOrientedWay(){
@@ -26,8 +34,7 @@ class ViewController: UIViewController {
         guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
         
         let fetchRequest = NSFetchRequest<User>.init(entityName: "User")
-        
-        
+                
         do{
             let data = try managedContext.fetch(fetchRequest) as [NSManagedObject]
             
@@ -47,6 +54,149 @@ class ViewController: UIViewController {
         }
     }
     
+    func fetchRequestWithIDType(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<NSManagedObjectID>.init(entityName: "User")
+        
+        userFetchRequest.resultType = .managedObjectIDResultType
+        
+        do{
+            
+            let objectIDs = try managedContext.fetch(userFetchRequest)
+            
+            for id in objectIDs{
+                print(id)
+            }
+            
+        }catch{
+            print(error.localizedDescription)
+        }
+    }
+    
+    
+    func fetchRequestWithCountType(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<NSNumber>.init(entityName: "User")
+        
+        userFetchRequest.resultType = .countResultType
+        
+        do{
+            let userCount = try managedContext.fetch(userFetchRequest)
+            
+            for count in userCount{
+                print(count)
+            }
+        }catch{
+            print(error.localizedDescription)
+        }
+    }
+    
+    
+    
+    func fetchRequestWithDictionaryType(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<NSDictionary>.init(entityName: "User")
+        
+        let sortByFirstName = NSSortDescriptor(key: "firstName", ascending: true)
+        
+        userFetchRequest.resultType = .dictionaryResultType
+        
+        userFetchRequest.sortDescriptors = [sortByFirstName]
+        
+        do{
+            let users = try managedContext.fetch(userFetchRequest)
+            
+            for user in users{
+                print(user)
+                print("Name : \(user["firstName"]!) \(user["secondName"]!)")
+            }
+        }catch{
+            
+        }
+        
+    }
+    
+    
+    
+    func fetchRequestWithDefaultType(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        
+        userFetchRequest.resultType = .managedObjectResultType
+        
+        userFetchRequest.returnsObjectsAsFaults = false
+        
+        do{
+            let users = try managedContext.fetch(userFetchRequest)
+            
+            for user in users{
+                print(user)
+            }
+        }catch{
+            print(error.localizedDescription)
+        }
+    }
+    
+    
+    
+    func fetchUserByNameUsingSortDiscriptor(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        
+        let sortByFirstName = NSSortDescriptor(key: "firstName", ascending: false)
+        
+        userFetchRequest.sortDescriptors = [sortByFirstName]
+        do{
+            let users = try managedContext.fetch(userFetchRequest)
+            for user in users {
+                print(user.firstName! as String)
+            }
+        }catch{
+            
+        }
+    }
+    
+    
+    func fetchUserByNameUsingNSPredicte(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        
+        userFetchRequest.predicate = NSPredicate.init(format: "firstName == %@", "Philip")
+        
+        do{
+            let users = try managedContext.fetch(userFetchRequest)
+            for item in users {
+                print(item.firstName! as String)
+            }
+        }catch{
+            print(error)
+        }
+        
+    }
     
     
     func fetchTaskFromCoreDataObejctOrientedWay(){
@@ -118,7 +268,6 @@ class ViewController: UIViewController {
         taskOne.details = "First Item Description"
         taskOne.id = 1
         
-        
         let taskSecond = Task(context: managedContext)
         taskSecond.name = "Second Item"
         taskSecond.details = "Second Item Description"
@@ -134,7 +283,7 @@ class ViewController: UIViewController {
         userPassport.number = "User Passport Number"
         
         let user = User(context: managedContext)
-        user.firstName = "Fadi"
+        user.firstName = "Philip"
         user.secondName = "Al-Twal"
         user.userId = 123
         user.tasks = NSSet.init(array: [taskOne,taskSecond,taskThird])
@@ -144,6 +293,7 @@ class ViewController: UIViewController {
         if managedContext.hasChanges{
             do{
                 try managedContext.save()
+                print("Saved")
             }catch{
                 print(error.localizedDescription)
             }
