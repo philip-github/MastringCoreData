@@ -23,8 +23,16 @@ class ViewController: UIViewController {
 //        fetchRequestWithDefaultType()
 //        fetchRequestWithDictionaryType()
 //        fetchRequestWithCountType()
-        fetchRequestWithIDType()
+//        fetchRequestWithIDType()
+//        fetchRequestWithFaultObjects()
+//        fetchRequestForPropertyUsingDictionaryResultType()
+//        fetchRequestForPropertyUsingManagedObjectResultType()
+//        fetchRequestWithLimit()
+//        add10000Object()
+        fetchRequestUsingLimitBatchingAndOffset()
     }
+    
+    
     
     func deleteTaskFromCoreDataObjectOrientedWay(){
         
@@ -52,6 +60,148 @@ class ViewController: UIViewController {
             print(error.localizedDescription)
         }
     }
+    
+    
+    
+    func fetchRequestUsingLimitBatchingAndOffset(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        
+        var offset = 0
+        userFetchRequest.fetchOffset = offset
+        userFetchRequest.fetchLimit = 1000
+        
+        do{
+            
+            var users = try managedContext.fetch(userFetchRequest)
+            
+            while users.count > 0{
+                offset = offset + users.count
+                userFetchRequest.fetchOffset = offset
+                users = try managedContext.fetch(userFetchRequest)
+                print(users.count)
+            }
+            
+        }catch{
+            print(error.localizedDescription)
+        }
+        
+    }
+    
+    
+    
+    func fetchRequestWithLimit(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        
+        userFetchRequest.fetchLimit = 1
+        
+        do{
+            let users = try managedContext.fetch(userFetchRequest)
+            
+            for user in users{
+                print(user)
+            }
+        }catch{
+            print(error.localizedDescription)
+        }
+    }
+    
+    
+    
+    func fetchRequestForPropertyUsingManagedObjectResultType(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        userFetchRequest.propertiesToFetch = ["firstName"]
+        userFetchRequest.resultType = .managedObjectResultType
+        userFetchRequest.returnsObjectsAsFaults = true
+        
+        do{
+            let users = try managedContext.fetch(userFetchRequest)
+            
+            print(users[0]) // it will return a faulty object
+            print(users[0].firstName!) // access the object
+            print(users[0]) // also it will return faulty objects
+            print(users[0].secondName!) // once accessed a property that is not in propertiesToFetch it will load the whole object in memory once called
+            print(users[0]) // it will load the whole object in memory
+        }catch{
+            print(error.localizedDescription)
+        }
+    }
+    
+    
+    
+    
+    func fetchRequestForPropertyUsingDictionaryResultType(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<NSDictionary>.init(entityName: "User")
+        
+        
+        userFetchRequest.propertiesToFetch = ["firstName"]
+        userFetchRequest.resultType = .dictionaryResultType
+        
+        do{
+            let users = try managedContext.fetch(userFetchRequest)
+            
+            for user in users{
+                print(user)
+            }
+            
+        }catch{
+            
+        }
+    }
+    
+    
+    
+    
+    func fetchRequestWithFaultObjects(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        
+        userFetchRequest.returnsObjectsAsFaults = true
+        
+        do{
+            let users = try managedContext.fetch(userFetchRequest)
+            
+            for user in users{
+                print(user) // return a faulty objects
+            }
+            
+            for user in users{
+                let _ = user.firstName // once access the objects
+            }
+            
+            for user in users{
+                print(user) // it will load complete objects in memory
+            }
+        }catch{
+            print(error.localizedDescription)
+        }
+    }
+    
+    
+    
     
     func fetchRequestWithIDType(){
         
@@ -250,6 +400,29 @@ class ViewController: UIViewController {
                 print("Saved")
             }catch{
                 print(error)
+            }
+        }
+    }
+    
+    
+    func add10000Object(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        for i in 0..<10000{
+            let user = User(context: managedContext)
+            user.firstName = "Philip #\(i)"
+            user.secondName = "Al-Twal #\(i)"
+            user.userId = Int64(i)
+        }
+        
+        if managedContext.hasChanges{
+            do{
+                try managedContext.save()
+            }catch{
+                print(error.localizedDescription)
             }
         }
     }
