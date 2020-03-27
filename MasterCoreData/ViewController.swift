@@ -16,6 +16,8 @@ class ViewController: UIViewController {
         
 //        addTodoTaskObjectOrientedWay()
 //        addOneTodoTask()
+//        addTwosUsersUsingMultithreadingOnMainThread()
+//        managedObjectAccessOnDifferentThreadsERROR()
 //        deleteTaskFromCoreDataObjectOrientedWay()
 //        fetchTaskFromCoreDataObejctOrientedWay()
 //        fetchUserByNameUsingNSPredicte()
@@ -29,9 +31,10 @@ class ViewController: UIViewController {
 //        fetchRequestForPropertyUsingManagedObjectResultType()
 //        fetchRequestWithLimit()
 //        add10000Object()
-        fetchRequestUsingLimitBatchingAndOffset()
+//        fetchRequestUsingLimitBatchingAndOffset()
+//        addTwoUsersAndFetchingOnDifferentThreadsShouldGiveERROR()
+        
     }
-    
     
     
     func deleteTaskFromCoreDataObjectOrientedWay(){
@@ -60,6 +63,7 @@ class ViewController: UIViewController {
             print(error.localizedDescription)
         }
     }
+    
     
     
     
@@ -136,6 +140,7 @@ class ViewController: UIViewController {
             print(users[0]) // also it will return faulty objects
             print(users[0].secondName!) // once accessed a property that is not in propertiesToFetch it will load the whole object in memory once called
             print(users[0]) // it will load the whole object in memory
+            
         }catch{
             print(error.localizedDescription)
         }
@@ -372,6 +377,120 @@ class ViewController: UIViewController {
         }
     }
     
+    func managedObjectAccessOnDifferentThreadsERROR(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let mainQueueContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        guard let privateQueueContext = appDelegate?.persistentContainer.newBackgroundContext() else {return}
+        
+        let user = User(context: mainQueueContext)
+        user.firstName = "main queue"
+        user.secondName = "main queue"
+        user.userId = Int64(111)
+        
+        
+        let task = Task(context: privateQueueContext)
+        task.name = "task name"
+        task.details = "task name description"
+        task.id = 1
+        
+        user.tasks = NSSet.init(array: [task])
+        
+        do{
+            try mainQueueContext.save()
+        }catch{
+            print(error.localizedDescription)
+        }
+    }
+    
+    
+    
+    func addTwosUsersUsingMultithreadingOnMainThread(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        DispatchQueue.global(qos: .background).async {
+            
+            
+            print("\(Thread.current)")
+            
+            
+            managedContext.perform {
+                print("\n\n\n\n")
+                print(Thread.current)
+                
+                let user = User(context: managedContext)
+                user.firstName = "user first name"
+                user.secondName = "user first last name"
+                user.userId = Int64(333)
+                
+                
+                let secUser = User(context: managedContext)
+                secUser.firstName = "user second name"
+                secUser.secondName = "user second last name"
+                secUser.userId = Int64(444)
+                
+                
+                if managedContext.hasChanges{
+                    do{
+                        try managedContext.save()
+                    }catch{
+                        print(error.localizedDescription)
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    
+    func addTwoUsersAndFetchingOnDifferentThreadsShouldGiveERROR(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let managedContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        
+        do{
+            let users = try managedContext.fetch(userFetchRequest)
+            for user in users {
+                print(user)
+            }
+        }catch{
+            print(error.localizedDescription)
+        }
+        
+        
+        // adding another users
+        DispatchQueue.global(qos: .background).async {
+            
+            let user = User(context: managedContext)
+            user.firstName = "user first name"
+            user.secondName = "user first last name"
+            user.userId = Int64(333)
+            
+            
+            let secUser = User(context: managedContext)
+            secUser.firstName = "user second name"
+            secUser.secondName = "user second last name"
+            secUser.userId = Int64(444)
+            
+            
+            if managedContext.hasChanges{
+                do{
+                    try managedContext.save()
+                }catch{
+                    print(error.localizedDescription)
+                }
+            }
+        }
+    }
+    
     
     func addOneTodoTask(){
         
@@ -392,7 +511,6 @@ class ViewController: UIViewController {
         user.userId = 000
         
         user.tasks = NSSet.init(array: [task])
-        
         
         if managedContext.hasChanges{
             do{
