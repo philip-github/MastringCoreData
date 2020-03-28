@@ -17,6 +17,7 @@ class ViewController: UIViewController {
 //        addTodoTaskObjectOrientedWay()
 //        addOneTodoTask()
 //        addTwosUsersUsingMultithreadingOnMainThread()
+//        addOneUsersUsingPrivateContextThread()
 //        managedObjectAccessOnDifferentThreadsERROR()
 //        deleteTaskFromCoreDataObjectOrientedWay()
 //        fetchTaskFromCoreDataObejctOrientedWay()
@@ -33,6 +34,10 @@ class ViewController: UIViewController {
 //        add10000Object()
 //        fetchRequestUsingLimitBatchingAndOffset()
 //        addTwoUsersAndFetchingOnDifferentThreadsShouldGiveERROR()
+//        notificationInsertFired()
+//        notificationUpdateFired()
+//        addUser()
+//        notificationThreadingStrategy()
         
     }
     
@@ -406,6 +411,31 @@ class ViewController: UIViewController {
     }
     
     
+    func addOneUsersUsingPrivateContextThread(){
+        
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let privateManagedContext = appDelegate?.persistentContainer.newBackgroundContext() else {return}
+        
+        print(Thread.current)
+        privateManagedContext.perform {
+            print(Thread.current)
+            let user = User(context: privateManagedContext)
+            user.firstName = "private first name"
+            user.secondName = "private second name"
+            user.userId = Int64(888)
+            
+            do{
+                try privateManagedContext.save()
+                
+            }catch{
+                print(error.localizedDescription)
+            }
+        }
+    }
+
+    
     
     func addTwosUsersUsingMultithreadingOnMainThread(){
         
@@ -419,7 +449,7 @@ class ViewController: UIViewController {
             print("\(Thread.current)")
             
             
-            managedContext.perform {
+            managedContext.perform{
                 print("\n\n\n\n")
                 print(Thread.current)
                 
@@ -590,4 +620,183 @@ class ViewController: UIViewController {
         }
     }
     
+}
+
+
+extension ViewController {
+    
+    // INFORM OTHER MANAGED OBJECT CONTEXT BY USING NOTIFICATION
+    
+    
+    func notificationInsertFired(){
+        
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let mainQueueContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(contextObjectDidChange(_:)), name: Notification.Name.NSManagedObjectContextObjectsDidChange, object: mainQueueContext)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(contextWillSave(_:)), name: Notification.Name.NSManagedObjectContextWillSave, object: mainQueueContext)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(contextDidSave(_:)), name: Notification.Name.NSManagedObjectContextDidSave, object: mainQueueContext)
+        
+        
+        mainQueueContext.performAndWait {
+            let user = User(context: mainQueueContext)
+            user.firstName = "Philip"
+            user.secondName = "somthing"
+            user.userId = Int64(777)
+            
+            do{
+                try mainQueueContext.save()
+            }catch{
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
+    
+    func notificationUpdateFired(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let mainQueueContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(contextObjectDidChange(_:)), name: Notification.Name.NSManagedObjectContextObjectsDidChange, object: mainQueueContext)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(contextWillSave(_:)), name: Notification.Name.NSManagedObjectContextWillSave, object: mainQueueContext)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(contextDidSave(_:)), name: Notification.Name.NSManagedObjectContextDidSave, object: mainQueueContext)
+        
+        let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        userFetchRequest.predicate = NSPredicate(format: "firstName == %@", "Philip")
+        userFetchRequest.predicate = NSPredicate(format: "secondName == %@", "somthing")
+        
+        mainQueueContext.performAndWait {
+            do{
+                let users = try mainQueueContext.fetch(userFetchRequest)
+                print(users)
+                for user in users{
+                    user.firstName = "Fadi"
+                    user.secondName = "Al-Twal"
+                }
+                do{
+                    try mainQueueContext.save()
+                }catch{
+                    print(error.localizedDescription)
+                }
+            }catch{
+                print(error.localizedDescription)
+            }
+        }
+        
+    }
+    
+    
+    
+    @objc func contextObjectDidChange(_ notification: Notification){
+        
+        guard let userInfo = notification.userInfo else {return}
+        
+        if let inserts = userInfo[NSInsertedObjectsKey] as? Set<NSManagedObject> , inserts.count > 0 {
+            print("---INSERTS---")
+            print(inserts)
+            print("+++++++++++++")
+        }
+        
+        if let updates = userInfo[NSUpdatedObjectsKey] as? Set<NSManagedObject> , updates.count > 0 {
+            print("---UPDATES---")
+            for update in updates{
+                print(update.changedValues())
+            }
+            print("+++++++++++++")
+        }
+        
+        if let deletes = userInfo[NSDeletedObjectsKey] as? Set<NSManagedObject> , deletes.count > 0 {
+            print("---DELETES---")
+            print(deletes)
+            print("+++++++++++++")
+        }
+    }
+    
+    
+    
+    @objc func contextWillSave(_ notification: Notification){
+        
+    }
+    
+    
+    
+    // MARK: notifiy and merging the updated value in private thread to main thread
+    @objc func contextDidSave(_ notification: Notification){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let mainQueueContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        mainQueueContext.perform {
+            mainQueueContext.mergeChanges(fromContextDidSave: notification)
+        }
+        
+    }
+    
+    
+    // MARK: Used for multithreading strategy
+    func addUser(){
+           
+           let appDelegate = UIApplication.shared.delegate as? AppDelegate
+           
+           guard let mainQueueContext = appDelegate?.persistentContainer.viewContext else {return}
+           
+           let user = User(context: mainQueueContext)
+           user.firstName = "Philip"
+           user.secondName = "Al-Twal"
+           user.userId = 222
+           
+           do{
+               try mainQueueContext.save()
+           }catch{
+               print(error.localizedDescription)
+           }
+       }
+    
+    
+    
+    // MARK: updating a value in database in private thread
+    func notificationThreadingStrategy(){
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let privateQueueContext = appDelegate?.persistentContainer.newBackgroundContext() else {return}
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(contextDidSave(_:)), name: Notification.Name.NSManagedObjectContextDidSave, object: privateQueueContext)
+        
+        let userFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        userFetchRequest.predicate = NSPredicate(format: "firstName == %@", "Philip")
+        
+        privateQueueContext.performAndWait {
+            do{
+                let users = try privateQueueContext.fetch(userFetchRequest)
+                for user in users{
+                    print(user)
+                    if user.firstName == "Philip"{
+                        user.firstName = "updated philip"
+                    }
+                }
+                do{
+                    try privateQueueContext.save()
+                }catch{
+                    print(error.localizedDescription)
+                }
+                
+                for user in users{
+                    print(user.firstName!) // printing firstName after updated on private thread
+                }
+                
+            }catch{
+                print(error.localizedDescription)
+            }
+        }
+    }
 }
