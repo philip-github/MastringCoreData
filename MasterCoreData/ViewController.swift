@@ -38,7 +38,8 @@ class ViewController: UIViewController {
 //        notificationUpdateFired()
 //        addUser()
 //        notificationThreadingStrategy()
-        
+//        addFourUsers()
+//        parentChildContext()
     }
     
     
@@ -123,6 +124,7 @@ class ViewController: UIViewController {
             print(error.localizedDescription)
         }
     }
+    
     
     
     
@@ -237,6 +239,8 @@ class ViewController: UIViewController {
     }
     
     
+    
+    
     func fetchRequestWithCountType(){
         
         let appDelegate = UIApplication.shared.delegate as? AppDelegate
@@ -257,6 +261,7 @@ class ViewController: UIViewController {
             print(error.localizedDescription)
         }
     }
+    
     
     
     
@@ -289,6 +294,7 @@ class ViewController: UIViewController {
     
     
     
+    
     func fetchRequestWithDefaultType(){
         
         let appDelegate = UIApplication.shared.delegate as? AppDelegate
@@ -314,6 +320,7 @@ class ViewController: UIViewController {
     
     
     
+    
     func fetchUserByNameUsingSortDiscriptor(){
         
         let appDelegate = UIApplication.shared.delegate as? AppDelegate
@@ -336,6 +343,8 @@ class ViewController: UIViewController {
     }
     
     
+    
+    
     func fetchUserByNameUsingNSPredicte(){
         
         let appDelegate = UIApplication.shared.delegate as? AppDelegate
@@ -356,6 +365,8 @@ class ViewController: UIViewController {
         }
         
     }
+    
+    
     
     
     func fetchTaskFromCoreDataObejctOrientedWay(){
@@ -381,6 +392,9 @@ class ViewController: UIViewController {
             print(error.localizedDescription)
         }
     }
+    
+    
+    
     
     func managedObjectAccessOnDifferentThreadsERROR(){
         
@@ -411,6 +425,8 @@ class ViewController: UIViewController {
     }
     
     
+    
+    
     func addOneUsersUsingPrivateContextThread(){
         
         
@@ -435,6 +451,7 @@ class ViewController: UIViewController {
         }
     }
 
+    
     
     
     func addTwosUsersUsingMultithreadingOnMainThread(){
@@ -475,6 +492,7 @@ class ViewController: UIViewController {
             }
         }
     }
+    
     
     
     
@@ -522,6 +540,8 @@ class ViewController: UIViewController {
     }
     
     
+    
+    
     func addOneTodoTask(){
         
         let appDelegate = UIApplication.shared.delegate as? AppDelegate
@@ -553,6 +573,8 @@ class ViewController: UIViewController {
     }
     
     
+    
+    
     func add10000Object(){
         
         let appDelegate = UIApplication.shared.delegate as? AppDelegate
@@ -574,6 +596,7 @@ class ViewController: UIViewController {
             }
         }
     }
+    
     
     
     
@@ -625,7 +648,7 @@ class ViewController: UIViewController {
 
 extension ViewController {
     
-    // INFORM OTHER MANAGED OBJECT CONTEXT BY USING NOTIFICATION
+    //MARK: INFORM OTHER MANAGED OBJECT CONTEXT BY USING NOTIFICATION
     
     
     func notificationInsertFired(){
@@ -794,6 +817,148 @@ extension ViewController {
                     print(user.firstName!) // printing firstName after updated on private thread
                 }
                 
+            }catch{
+                print(error.localizedDescription)
+            }
+        }
+    }
+}
+
+extension ViewController {
+    
+    //MARK: merge changes using Parren/child strategy recomended by Apple.
+    
+    
+    func addFourUsers(){
+        
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {return}
+        
+        let mainQueueContext = appDelegate.persistentContainer.viewContext
+        
+        for i in 0..<4 {
+            let user = User(context: mainQueueContext)
+            user.firstName = "first name \(i)"
+            user.secondName = "second name \(i)"
+            user.userId = Int64(i)
+        }
+        
+        do{
+            try mainQueueContext.save()
+        }catch{
+            print(error.localizedDescription)
+        }
+    }
+    
+    
+    
+    func parentChildContext() {
+        
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        
+        guard let mainQueueContext = appDelegate?.persistentContainer.viewContext else {return}
+        
+        let privateQueueContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+
+        let mainFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        let privateFetchRequest = NSFetchRequest<User>.init(entityName: "User")
+        privateQueueContext.parent = mainQueueContext
+        
+        
+        // users count check on main thread (parent)
+        mainQueueContext.performAndWait {
+            
+            do{
+                let users = try mainQueueContext.fetch(mainFetchRequest)
+                print(users.count)
+            }catch{
+                print(error.localizedDescription)
+            }
+            
+        }
+        
+        // users count check on private thread (child)
+        privateQueueContext.performAndWait {
+            do{
+                let users = try privateQueueContext.fetch(privateFetchRequest)
+                print(users.count)
+            }catch{
+                print(error.localizedDescription)
+            }
+        }
+        
+        
+        // adding 996 users on private thread
+        privateQueueContext.performAndWait {
+            
+            
+            for i in 4..<1000{
+                let user = User(context: privateQueueContext)
+                user.firstName = "first name \(i)"
+                user.secondName = "second name \(i)"
+                user.userId = Int64(i)
+            }
+        }
+        
+        // users count check on main thread after adding 996 users on private thread (parent)
+        mainQueueContext.performAndWait {
+            
+            do{
+                let users = try mainQueueContext.fetch(mainFetchRequest)
+                print(users.count)
+            }catch{
+                print(error.localizedDescription)
+            }
+            
+        }
+        
+        // users count check on private thread after adding on it a 996 users (child)
+        privateQueueContext.performAndWait {
+            do{
+                let users = try privateQueueContext.fetch(privateFetchRequest)
+                print(users.count)
+            }catch{
+                print(error.localizedDescription)
+            }
+        }
+        
+        
+        
+        // merging changes to the main thread by callin save method
+        privateQueueContext.performAndWait {
+            do{
+                try privateQueueContext.save()
+            }catch{
+                print(error.localizedDescription)
+            }
+        }
+        
+        
+        // users count check for the parent (main) after calling save method on private thread (child)
+        mainQueueContext.performAndWait {
+            
+            do{
+                let users = try mainQueueContext.fetch(mainFetchRequest)
+                print(users.count)
+            }catch{
+                print(error.localizedDescription)
+            }
+        }
+        
+        
+        // users count check on the child (private) after calling save method on it.
+        privateQueueContext.performAndWait {
+            do{
+                let users = try privateQueueContext.fetch(privateFetchRequest)
+                print(users.count)
+            }catch{
+                print(error.localizedDescription)
+            }
+        }
+        
+        // calling save method on main (parent) to commit changes that we merged from calling save method on private (child)
+        mainQueueContext.performAndWait {
+            do{
+                try mainQueueContext.save()
             }catch{
                 print(error.localizedDescription)
             }
